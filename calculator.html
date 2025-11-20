@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Neon Calculator — Cyberpunk</title>
+
+<style>
+  :root{
+    --bg1:#02060a;
+    --bg2:#041018;
+    --neon: #00ffd5;
+    --neon-2:#00b3ff;
+    --accent:#7affc8;
+    --danger:#ff6b6b;
+    --op:#ffcf5c;
+    --glass: rgba(255,255,255,0.04);
+  }
+
+  /* Page */
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: radial-gradient(1200px 600px at 10% 10%, #02111a 0%, var(--bg1) 18%, var(--bg2) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px;
+    color: #dff;
+  }
+
+  /* Container */
+  .wrap{
+    display:flex;
+    gap:28px;
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .calculator{
+    width:360px;
+    border-radius:20px;
+    padding:20px;
+    position:relative;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18));
+    box-shadow:
+      0 10px 40px rgba(0,0,0,0.6),
+      0 0 40px rgba(0,255,210,0.06) inset;
+    border: 1px solid rgba(0,255,210,0.06);
+    overflow:hidden;
+  }
+
+  /* Neon pulsing border */
+  .calculator::before{
+    content:"";
+    position:absolute; inset:-3px;
+    border-radius:22px;
+    padding:3px;
+    background: linear-gradient(90deg, rgba(0,255,210,0.12), rgba(0,179,255,0.09));
+    filter: blur(14px);
+    z-index:-1;
+    opacity:0.6;
+    animation: pulseBorder 3s ease-in-out infinite;
+  }
+  @keyframes pulseBorder{
+    0%{ transform: scale(0.98); opacity:0.5; }
+    50%{ transform: scale(1.02); opacity:1; }
+    100%{ transform: scale(0.98); opacity:0.6; }
+  }
+
+  /* top area */
+  .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  .brand{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .logo{
+    width:44px;height:44px;border-radius:10px;
+    background:linear-gradient(135deg,var(--neon),var(--neon-2));
+    box-shadow:0 4px 20px rgba(0,255,210,0.12), 0 0 18px rgba(0,179,255,0.18);
+    display:flex;align-items:center;justify-content:center;
+    color:#001; font-weight:800; letter-spacing:1px;
+    font-size:18px;
+  }
+  .title{
+    font-size:14px; color:#cfe; font-weight:700;
+  }
+
+  /* status + power */
+  .status {
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+  .led{
+    width:14px;height:14px;border-radius:50%;
+    background:#450000;
+    box-shadow: 0 0 8px rgba(255,80,80,0.25);
+    transition: all .25s ease;
+  }
+
+  .power-btn{
+    background:transparent;
+    border: 1px solid rgba(0,255,210,0.15);
+    color:var(--neon); padding:8px 14px; border-radius:10px;
+    cursor:pointer; font-weight:700;
+    box-shadow: 0 6px 18px rgba(0,179,255,0.06);
+    transition: all .18s ease;
+  }
+  .power-btn:hover{ transform: translateY(-3px); box-shadow:0 12px 28px rgba(0,255,210,0.12); }
+
+  /* display */
+  .display {
+    height:88px;
+    border-radius:12px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.8));
+    padding:12px 18px;
+    color:var(--neon);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+    font-size:36px;
+    font-weight:700;
+    letter-spacing:2px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    box-shadow: inset 0 -6px 24px rgba(0,0,0,0.6), 0 6px 30px rgba(0,255,210,0.03);
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* boot flicker effect */
+  .display.boot::after{
+    content:"";
+    position:absolute; inset:0;
+    background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    animation: flicker 850ms linear 1;
+    pointer-events:none;
+  }
+  @keyframes flicker{
+    0%{opacity:1}
+    30%{opacity:0.08}
+    50%{opacity:0.6}
+    65%{opacity:0.15}
+    80%{opacity:0.5}
+    100%{opacity:1}
+  }
+
+  /* small meta line */
+  .meta{
+    margin-top:6px;
+    font-size:11px;color:#bfe; opacity:0.8;
+    display:flex;justify-content:space-between;
+  }
+
+  /* keypad */
+  .keys{
+    margin-top:16px;
+    display:grid;
+    grid-template-columns: repeat(4,1fr);
+    gap:12px;
+  }
+
+  .key{
+    height:64px;
+    border-radius:12px;
+    border:none; cursor:pointer; font-size:20px; font-weight:700;
+    color:#eafcff;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.45));
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5), 0 0 12px rgba(0,255,210,0.02);
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+
+  .key:hover{ transform: translateY(-6px); box-shadow: 0 18px 36px rgba(0,255,210,0.08); }
+  .key:active{ transform: translateY(-2px) scale(.98); }
+
+  .key.op{
+    background: linear-gradient(180deg, #ffd98d, #ffb24a);
+    color:#08100a;
+    box-shadow: 0 8px 28px rgba(255,180,30,0.22);
+  }
+  .key.op:hover{ box-shadow: 0 20px 44px rgba(255,180,30,0.32); }
+
+  .key.clear{
+    background: linear-gradient(180deg, #ff8b8b, #e04242);
+    box-shadow: 0 8px 28px rgba(255,80,80,0.18);
+  }
+
+  .key.delete{
+    background: linear-gradient(180deg, #6f1020, #a21b2a);
+    box-shadow: 0 8px 28px rgba(180,30,40,0.14);
+  }
+
+  /* wide keys */
+  .span-2{ grid-column: span 2; }
+
+  /* disabled state visually */
+  .keys.disabled .key{
+    filter: grayscale(.5) brightness(.7);
+    opacity:0.35;
+    pointer-events:none;
+    transform:none;
+    box-shadow:none;
+  }
+
+  /* footer text */
+  .footer{
+    margin-top:12px;
+    text-align:center;
+    font-size:12px;
+    color:#bfe;
+    opacity:0.9;
+    letter-spacing:1px;
+    font-weight:700;
+  }
+
+  /* subtle glow on focus (keyboard) */
+  button:focus{ outline: none; box-shadow: 0 0 26px rgba(0,255,210,0.18); }
+
+  /* responsive */
+  @media (max-width:400px){
+    .calculator{ width:320px; }
+    .display{ font-size:28px; height:72px;}
+    .key{ height:58px; font-size:18px; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="calculator" role="application" aria-label="Neon Calculator">
+    <div class="top">
+      <div class="brand">
+        <div class="logo">NC</div>
+        <div>
+          <div class="title">NEON CALCULATOR</div>
+          <div style="font-size:11px;color:#9fd;opacity:.8">CYBERPUNK THEME</div>
+        </div>
+      </div>
+
+      <div class="status">
+        <div class="led" id="led"></div>
+        <button class="power-btn" id="powerBtn" onclick="togglePower()">ON</button>
+      </div>
+    </div>
+
+    <div class="display" id="displayBox"> </div>
+    <div class="meta"><div id="smallHint">POWER: OFF</div><div id="tzLabel">ASIA/MANILA</div></div>
+
+    <div class="keys disabled" id="keys">
+      <!-- Row 1 -->
+      <button class="key" onclick="press('7')">7</button>
+      <button class="key" onclick="press('8')">8</button>
+      <button class="key" onclick="press('9')">9</button>
+      <button class="key delete" onclick="deleteLast()">⌫</button>
+
+      <!-- Row 2 -->
+      <button class="key" onclick="press('4')">4</button>
+      <button class="key" onclick="press('5')">5</button>
+      <button class="key" onclick="press('6')">6</button>
+      <button class="key op" onclick="press('/')">÷</button>
+
+      <!-- Row 3 -->
+      <button class="key" onclick="press('1')">1</button>
+      <button class="key" onclick="press('2')">2</button>
+      <button class="key" onclick="press('3')">3</button>
+      <button class="key op" onclick="press('*')">×</button>
+
+      <!-- Row 4 -->
+      <button class="key span-2" onclick="press('0')">0</button>
+      <button class="key" onclick="press('.')">.</button>
+      <button class="key op" onclick="press('+')">+</button>
+
+      <!-- Row 5 (bottom) -->
+      <button class="key op" onclick="calculate()">=</button>
+      <button class="key clear span-2" onclick="clearDisplay()">CLEAR</button>
+      <button class="key op" onclick="press('-')">−</button>
+    </div>
+
+    <div class="footer">CREATED BY JOSH V MASANGKAY, JOHN PAUL M. LABAGUIS AND NEIL O. LATAGAN — BSIT 2C</div>
+  </div>
+</div>
+
+<script>
+  // state
+  let isOn = false;
+  const keysBox = document.getElementById('keys');
+  const led = document.getElementById('led');
+  const powerBtn = document.getElementById('powerBtn');
+  const displayBox = document.getElementById('displayBox');
+  const hint = document.getElementById('smallHint');
+
+  // internal display value (string)
+  let dispVal = "";
+
+  // toggle power with boot animation
+  function togglePower(){
+    if (!isOn){
+      // power ON: boot animation
+      led.style.background = '#7fffcb';
+      led.style.boxShadow = '0 0 14px rgba(0,255,210,0.75)';
+      powerBtn.textContent = 'OFF';
+      hint.textContent = 'BOOTING...';
+      displayBox.classList.add('boot');
+      // show quick boot sequence text
+      displayBox.textContent = "0000";
+      // disable keys until boot finishes
+      keysBox.classList.add('disabled');
+
+      // small staged boot effect
+      setTimeout(()=>{ displayBox.textContent = "INIT"; }, 200);
+      setTimeout(()=>{ displayBox.textContent = "READY"; }, 500);
+      setTimeout(()=>{ 
+        // final ready state
+        displayBox.classList.remove('boot');
+        isOn = true;
+        dispVal = "";
+        renderDisplay();
+        keysBox.classList.remove('disabled');
+        hint.textContent = 'POWER: ON';
+      }, 850);
+    } else {
+      // power OFF
+      isOn = false;
+      led.style.background = '#450000';
+      led.style.boxShadow = '0 0 8px rgba(255,80,80,0.25)';
+      powerBtn.textContent = 'ON';
+      keysBox.classList.add('disabled');
+      dispVal = "";
+      displayBox.textContent = "";
+      hint.textContent = 'POWER: OFF';
+    }
+  }
+
+  // render the display value (safely)
+  function renderDisplay(){
+    // clamp length
+    let val = String(dispVal).slice(0, 20);
+    if(val === "") val = "0";
+    displayBox.textContent = val;
+  }
+
+  // press numeric/operator
+  function press(ch){
+    if(!isOn) return;
+    // avoid two operators in a row (simple guard)
+    const ops = ['+','-','*','/','.','×','÷','−'];
+    const last = dispVal.slice(-1);
+    if(ops.includes(ch) && (dispVal === "" || ops.includes(last))) {
+      // if '.' and no dot exists in current number allow
+      if(ch === '.' && !currentNumberHasDot()) {
+        dispVal += ch;
+      } else {
+        // ignore invalid sequence
+        return;
+      }
+    } else {
+      dispVal += ch;
+    }
+    renderDisplay();
+  }
+
+  function currentNumberHasDot(){
+    // check last number chunk for dot
+    const parts = dispVal.split(/[\+\-\*\/×÷−]/);
+    const last = parts[parts.length-1] || "";
+    return last.includes('.');
+  }
+
+  // delete last char
+  function deleteLast(){
+    if(!isOn) return;
+    dispVal = dispVal.slice(0, -1);
+    renderDisplay();
+  }
+
+  // clear
+  function clearDisplay(){
+    if(!isOn) return;
+    dispVal = "";
+    renderDisplay();
+  }
+
+  // calculate - convert × ÷ − to JS symbols then eval safely
+  function calculate(){
+    if(!isOn) return;
+    if(dispVal.trim() === "") return;
+    try{
+      // replace unicode operator symbols with JS
+      let expr = dispVal.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+      // prevent dangerous characters (only digits, operators, parentheses, decimal)
+      if(!/^[0-9+\-*/().\s]+$/.test(expr)) {
+        displayBox.textContent = "ERROR";
+        dispVal = "";
+        return;
+      }
+      // evaluate
+      const result = Function('"use strict";return (' + expr + ')')();
+      dispVal = String(result);
+      renderDisplay();
+    }catch(e){
+      displayBox.textContent = "ERROR";
+      dispVal = "";
+    }
+  }
+
+  // keyboard support (optional)
+  document.addEventListener('keydown', (e)=>{
+    if(!isOn) return;
+    const k = e.key;
+    if((/\d/).test(k)) press(k);
+    else if(k === 'Backspace') deleteLast();
+    else if(k === 'Enter' || k === '=') calculate();
+    else if(k === 'Escape') clearDisplay();
+    else if(k === '.') press('.');
+    else if(k === '+'||k==='-'||k==='*'||k==='/' ) press(k);
+  });
+
+  // init: ensure OFF state visuals
+  (function init(){
+    isOn = false;
+    keysBox.classList.add('disabled');
+    led.style.background = '#450000';
+    hint.textContent = 'POWER: OFF';
+    displayBox.textContent = '';
+  })();
+
+</script>
+</body>
+</html>
